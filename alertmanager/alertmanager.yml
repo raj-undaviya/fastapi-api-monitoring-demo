@@ -1,0 +1,29 @@
+global:
+  resolve_timeout: 5m
+
+  # Email settings
+  smtp_smarthost: "smtp.gmail.com:587"
+  smtp_from: "snehasonawane509@gmail.com"
+  smtp_auth_username: "snehasonawane509@gmail.com"
+  smtp_auth_password_file: "/etc/alertmanager/secrets/smtp_password"
+  smtp_require_tls: true
+
+  # Slack webhook
+  slack_api_url_file: "/etc/alertmanager/secrets/slack_webhook"
+
+route:
+  receiver: demo-notifications
+  group_by: ["alertname", "severity"]
+  group_wait: 10s
+  group_interval: 30s
+  repeat_interval: 2h
+
+receivers:
+  - name: demo-notifications
+
+    slack_configs:
+      - send_resolved: true
+
+    email_configs:
+      - to: "undaviyaraj2000@gmail.com"
+        send_resolved: true

@@ -1,0 +1,80 @@
+groups:
+  - name: fastapi-monitoring
+    rules:
+
+      - alert: APIDown
+        expr: up{job="fastapi"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "FastAPI service is down"
+          description: "Prometheus cannot scrape the FastAPI service."
+
+      - alert: HighResponseTime
+        expr: |
+          (
+            rate(http_request_duration_seconds_sum{handler!="/metrics"}[2m])
+            /
+            rate(http_request_duration_seconds_count{handler!="/metrics"}[2m])
+          ) > 3
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "FastAPI response time is above 3 seconds"
+          description: "Average response latency has exceeded the required 3-second threshold."
+
+      - alert: HTTP500Errors
+        expr: |
+          sum(increase(http_requests_total{status="500"}[5m])) > 0
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "HTTP 500 errors detected"
+          description: "The FastAPI service is returning HTTP 500 responses."
+
+      - alert: IncreasedFailureRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"4..|5.."}[2m]))
+            /
+            sum(rate(http_requests_total[2m]))
+          ) > 0.10
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "API failure rate is above 10%"
+          description: "More than 10% of requests are currently failing."
+
+      - alert: HealthCheckFailure
+        expr: |
+          sum(rate(http_requests_total{handler="/health",status!="200"}[2m])) > 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "API health endpoint is failing"
+          description: "The /health endpoint has returned a non-200 response."
+
+      - alert: AuthenticationFailures
+        expr: |
+          sum(rate(http_requests_total{handler="/protected",status="401"}[2m])) > 0
+        for: 15s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Authentication failures detected"
+          description: "Invalid or missing bearer authentication was detected on /protected."
+
+      - alert: RateLimitFailures
+        expr: |
+          sum(rate(http_requests_total{handler="/simulate-rate-limit",status="429"}[2m])) > 0
+        for: 15s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Rate limit failures detected"
+          description: "HTTP 429 responses are being returned by the rate-limit simulation."
